@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Speed Test</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1rem 0 1.4rem;
+}
+.gauge-svg { overflow: visible; }
+.gauge-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.gauge-fill {
+  fill: none;
+  stroke: rgba(255,255,255,0.85);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease, stroke 0.4s ease;
+}
+.gauge-value {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  fill: white;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.gauge-unit {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  fill: rgba(255,255,255,0.45);
+  text-anchor: middle;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.gauge-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  fill: rgba(255,255,255,0.4);
+  text-anchor: middle;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.stat-box {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  transition: border-color 0.3s ease;
+}
+.stat-box.active { border-color: rgba(255,255,255,0.5); }
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: white;
+}
+.stat-unit {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+#status-msg {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  min-height: 1rem;
+}
+
+.progress-wrap { margin-bottom: 1rem; display: none; }
+.progress-bar { height: 2px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: rgba(255,255,255,0.6); border-radius: 2px; transition: width 0.2s ease; }
+
+#start-btn { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Speed Test</h1>
+    <div class="card">
+
+      <!-- Gauge -->
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" width="200" height="130" viewBox="0 0 200 120">
+          <!-- Arc: 210deg sweep, starts bottom-left -->
+          <path class="gauge-track" id="gauge-track"
+            d="M 20 110 A 80 80 0 1 1 180 110" />
+          <path class="gauge-fill" id="gauge-fill"
+            d="M 20 110 A 80 80 0 1 1 180 110" />
+          <text class="gauge-value" id="gauge-value" x="100" y="90">—</text>
+          <text class="gauge-unit" id="gauge-unit" x="100" y="112">Mbps</text>
+        </svg>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-box" id="box-ping">
+          <div class="stat-label">Ping</div>
+          <div class="stat-val" id="val-ping">—</div>
+          <div class="stat-unit">ms</div>
+        </div>
+        <div class="stat-box" id="box-dl">
+          <div class="stat-label">Download</div>
+          <div class="stat-val" id="val-dl">—</div>
+          <div class="stat-unit">Mbps</div>
+        </div>
+        <div class="stat-box" id="box-ul">
+          <div class="stat-label">Upload</div>
+          <div class="stat-val" id="val-ul">—</div>
+          <div class="stat-unit">Mbps</div>
+        </div>
+      </div>
+
+      <div id="status-msg">Press start to begin</div>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <button id="start-btn" onclick="runTest()">Start</button>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script>
+  // Gauge setup — arc path total length
+  const gaugeFill  = document.getElementById('gauge-fill');
+  const gaugeValue = document.getElementById('gauge-value');
+  const gaugeUnit  = document.getElementById('gauge-unit');
+
+  // Calculate arc length of "M 20 110 A 80 80 0 1 1 180 110"
+  // Full circle circ = 2π*80 ≈ 502.65, our arc ≈ 7/8 of circle ≈ 439.8
+  const ARC_LEN = 439.8;
+  gaugeFill.style.strokeDasharray  = ARC_LEN;
+  gaugeFill.style.strokeDashoffset = ARC_LEN; // start empty
+
+  function setGauge(mbps, max = 200) {
+    const pct = Math.min(mbps / max, 1);
+    gaugeFill.style.strokeDashoffset = ARC_LEN * (1 - pct);
+    // Color: slow=red, mid=yellow, fast=green
+    const hue = Math.round(pct * 120);
+    gaugeFill.style.stroke = `hsl(${hue}, 80%, 65%)`;
+    gaugeValue.textContent = mbps >= 10 ? Math.round(mbps) : mbps.toFixed(1);
+  }
+
+  function setStatus(msg) { document.getElementById('status-msg').textContent = msg; }
+  function setProgress(pct) { document.getElementById('progress-fill').style.width = pct + '%'; }
+
+  function setActive(id) {
+    ['box-ping','box-dl','box-ul'].forEach(b => document.getElementById(b).classList.remove('active'));
+    if (id) document.getElementById(id).classList.add('active');
+  }
+
+  // ── Test functions ──
+
+  async function measurePing() {
+    const url = 'https://www.cloudflare.com/cdn-cgi/trace';
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const t0 = performance.now();
+      await fetch(url + '?r=' + Math.random(), { cache: 'no-store' });
+      times.push(performance.now() - t0);
+    }
+    times.sort((a,b) => a-b);
+    return Math.round(times[1]); // second lowest (skip best outlier)
+  }
+
+  async function measureDownload(onProgress) {
+    // Use a ~5MB file from Cloudflare's public CDN
+    const url = 'https://speed.cloudflare.com/__down?bytes=5000000&r=' + Math.random();
+    const t0 = performance.now();
+    const res = await fetch(url, { cache: 'no-store' });
+    const reader = res.body.getReader();
+    let received = 0;
+    const total = 5000000;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.length;
+      onProgress(received / total);
+    }
+    const elapsed = (performance.now() - t0) / 1000;
+    return (received * 8) / elapsed / 1e6; // Mbps
+  }
+
+  async function measureUpload(onProgress) {
+    // Use httpbin which accepts POST uploads without rate limits
+    const chunkSize = 500000; // 500KB
+    const chunks = 4;
+    const data = new Uint8Array(chunkSize);
+    crypto.getRandomValues(data);
+
+    let totalBytes = 0;
+    const t0 = performance.now();
+
+    for (let i = 0; i < chunks; i++) {
+      const blob = new Blob([data]);
+      try {
+        await fetch('https://httpbin.org/post', {
+          method: 'POST',
+          body: blob,
+          cache: 'no-store',
+        });
+      } catch(e) {
+        // If one chunk fails, still count what we got
+      }
+      totalBytes += chunkSize;
+      onProgress((i + 1) / chunks);
+    }
+
+    const elapsed = (performance.now() - t0) / 1000;
+    return (totalBytes * 8) / elapsed / 1e6;
+  }
+
+  async function runTest() {
+    const btn = document.getElementById('start-btn');
+    btn.disabled = true;
+    btn.textContent = 'Testing…';
+    document.getElementById('progress-wrap').style.display = 'block';
+
+    // Reset
+    gaugeValue.textContent = '—';
+    gaugeFill.style.strokeDashoffset = ARC_LEN;
+    gaugeFill.style.stroke = 'rgba(255,255,255,0.85)';
+    ['val-ping','val-dl','val-ul'].forEach(id => document.getElementById(id).textContent = '—');
+
+    try {
+      // Ping
+      setActive('box-ping');
+      setStatus('Measuring ping…');
+      setProgress(5);
+      const ping = await measurePing();
+      document.getElementById('val-ping').textContent = ping;
+      setProgress(20);
+
+      // Download
+      setActive('box-dl');
+      setStatus('Testing download…');
+      let lastDl = 0;
+      const dl = await measureDownload(p => {
+        setProgress(20 + p * 40);
+        // Animate gauge during download
+        const approxMbps = lastDl || 10;
+        setGauge(approxMbps * p * 2);
+      });
+      lastDl = dl;
+      document.getElementById('val-dl').textContent = dl >= 10 ? Math.round(dl) : dl.toFixed(1);
+      setGauge(dl);
+      setProgress(60);
+
+      // Upload
+      setActive('box-ul');
+      setStatus('Testing upload…');
+      const ul = await measureUpload(p => {
+        setProgress(60 + p * 35);
+        setGauge(ul || dl * 0.3 * p);
+      });
+      document.getElementById('val-ul').textContent = ul >= 10 ? Math.round(ul) : ul.toFixed(1);
+      setGauge(dl); // return gauge to download value
+      setProgress(100);
+
+      setActive(null);
+      setStatus(`Done — ${ping}ms ping · ${dl >= 10 ? Math.round(dl) : dl.toFixed(1)} Mbps down · ${ul >= 10 ? Math.round(ul) : ul.toFixed(1)} Mbps up`);
+
+    } catch(err) {
+      setStatus('Error: ' + err.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run Again';
+    setTimeout(() => { document.getElementById('progress-wrap').style.display = 'none'; setProgress(0); }, 1000);
+  }
+</script>
+</body>
+</html>

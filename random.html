@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Random</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.big-number {
+  font-family: var(--font-mono);
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: white;
+  text-align: center;
+  letter-spacing: 0.05em;
+  padding: 1.2rem 0 0.6rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  line-height: 1;
+}
+.big-number:hover { opacity: 0.7; }
+.big-number.flash { opacity: 0; }
+.click-hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+.range-row input[type="number"] {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+}
+.range-sep {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.options-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+.opt-btn {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.5rem;
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+}
+.opt-btn.active {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.7);
+}
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  min-height: 1.5rem;
+}
+.history-chip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 2px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.history-chip:hover { color: white; border-color: rgba(255,255,255,0.35); }
+.history-chip.new { color: white; border-color: rgba(255,255,255,0.5); }
+
+/* Pick from list section */
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 1.4rem 0 1.2rem;
+}
+.pick-result {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  color: white;
+  text-align: center;
+  padding: 0.8rem 0 0.4rem;
+  min-height: 3rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.15s ease;
+  word-break: break-word;
+}
+.pick-result:hover { opacity: 0.7; }
+.pick-result.flash { opacity: 0; }
+.pick-result.empty { color: var(--text-muted); font-size: 0.8rem; padding-top: 1.2rem; }
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Random</h1>
+    <div class="card">
+
+      <!-- Number generator -->
+      <label>Random Number</label>
+      <div class="big-number" id="big-num" onclick="rollNumber()" title="Click to copy">—</div>
+      <div class="click-hint">click to copy · space to roll</div>
+
+      <div class="range-row">
+        <input type="number" id="range-min" value="1" />
+        <span class="range-sep">to</span>
+        <input type="number" id="range-max" value="100" />
+      </div>
+
+      <div class="options-row">
+        <button class="opt-btn active" id="opt-int" onclick="setType('int',this)">Integer</button>
+        <button class="opt-btn" id="opt-dec" onclick="setType('dec',this)">Decimal</button>
+      </div>
+
+      <button onclick="rollNumber()">Generate</button>
+
+      <label style="margin-top:1.1rem;">History</label>
+      <div class="history-list" id="history"></div>
+
+      <!-- Pick from list -->
+      <hr class="section-divider" />
+      <label>Pick from List</label>
+      <textarea id="pick-list" placeholder="Enter items, one per line…" style="min-height:110px;"></textarea>
+
+      <div class="pick-result empty" id="pick-result" onclick="copyPick()" title="Click to copy">Add items above</div>
+      <div class="click-hint" style="margin-top:0.2rem;">click result to copy</div>
+
+      <div class="options-row" style="margin-top:0.6rem;">
+        <button class="opt-btn active" id="pick-opt-one" onclick="setPickMode('one',this)">Pick one</button>
+        <button class="opt-btn" id="pick-opt-multi" onclick="setPickMode('multi',this)">Pick multiple</button>
+      </div>
+      <div id="pick-multi-row" style="display:none;margin-bottom:1.1rem;">
+        <input type="number" id="pick-count" value="3" min="1" style="margin:0;" placeholder="How many?" />
+      </div>
+
+      <button onclick="pickFromList()">Pick</button>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script>
+  let numType    = 'int';
+  let pickMode   = 'one';
+  let lastNumber = null;
+  let lastPick   = null;
+  const history  = [];
+
+  function setType(t, btn) {
+    numType = t;
+    document.querySelectorAll('#opt-int,#opt-dec').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function setPickMode(m, btn) {
+    pickMode = m;
+    document.querySelectorAll('#pick-opt-one,#pick-opt-multi').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pick-multi-row').style.display = m === 'multi' ? 'block' : 'none';
+  }
+
+  function rollNumber() {
+    const min = parseFloat(document.getElementById('range-min').value);
+    const max = parseFloat(document.getElementById('range-max').value);
+    if (isNaN(min) || isNaN(max) || min >= max) return;
+
+    let num;
+    if (numType === 'int') {
+      num = Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min);
+    } else {
+      num = parseFloat((Math.random() * (max - min) + min).toFixed(4));
+    }
+
+    lastNumber = num;
+    const el = document.getElementById('big-num');
+    el.classList.add('flash');
+    setTimeout(() => {
+      el.textContent = num;
+      el.classList.remove('flash');
+    }, 120);
+
+    // History
+    history.unshift(num);
+    if (history.length > 12) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const el = document.getElementById('history');
+    el.innerHTML = '';
+    history.forEach((n, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'history-chip' + (i === 0 ? ' new' : '');
+      chip.textContent = n;
+      chip.onclick = () => { navigator.clipboard.writeText(String(n)); };
+      el.appendChild(chip);
+    });
+  }
+
+  document.getElementById('big-num').addEventListener('click', () => {
+    if (lastNumber !== null) {
+      navigator.clipboard.writeText(String(lastNumber));
+    } else {
+      rollNumber();
+    }
+  });
+
+  function pickFromList() {
+    const lines = document.getElementById('pick-list').value
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+
+    if (!lines.length) return;
+
+    const el = document.getElementById('pick-result');
+    el.classList.add('flash');
+    el.classList.remove('empty');
+
+    setTimeout(() => {
+      if (pickMode === 'one') {
+        const picked = lines[Math.floor(Math.random() * lines.length)];
+        lastPick = picked;
+        el.textContent = picked;
+      } else {
+        const count = Math.min(parseInt(document.getElementById('pick-count').value) || 1, lines.length);
+        const shuffled = [...lines].sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, count);
+        lastPick = picked.join('\n');
+        el.textContent = picked.join('  ·  ');
+      }
+      el.classList.remove('flash');
+    }, 120);
+  }
+
+  function copyPick() {
+    if (lastPick) navigator.clipboard.writeText(lastPick);
+  }
+
+  // Spacebar to roll
+  document.addEventListener('keydown', e => {
+    if (e.key === ' ' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+      rollNumber();
+    }
+  });
+
+  // Enter on inputs to roll
+  ['range-min','range-max'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') rollNumber();
+    });
+  });
+
+  rollNumber();
+</script>
+</body>
+</html>
