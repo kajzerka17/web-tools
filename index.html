@@ -31,97 +31,187 @@
   border-color: rgba(255,255,255,0.45);
   padding-left: 1.4rem;
 }
-.tool-icon {
-  font-size: 1rem;
-  opacity: 0.7;
-  min-width: 20px;
-  text-align: center;
-}
-.tool-name {
-  flex: 1;
-}
-.tool-arrow {
-  opacity: 0.3;
-  font-size: 0.7rem;
-  transition: opacity 0.2s ease;
-}
+.tool-icon { font-size: 1rem; opacity: 0.7; min-width: 20px; text-align: center; }
+.tool-name { flex: 1; }
+.tool-arrow { opacity: 0.3; font-size: 0.7rem; transition: opacity 0.2s ease; }
 .tool-link:hover .tool-arrow { opacity: 0.8; }
+
+/* Page layout */
+.page-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+}
+.col-tools { width: 480px; flex-shrink: 0; }
+.col-notes { width: 340px; flex-shrink: 0; }
+
+/* Notes card internals */
+.notes-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.notes-filename {
+  flex: 1;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+.notes-action-btn {
+  width: auto;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+#notes-editor {
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: white;
+  resize: none;
+  outline: none;
+  line-height: 1.7;
+  height: 420px;
+  border-radius: 0;
+}
+#notes-editor::placeholder { color: rgba(255,255,255,0.2); }
+.notes-statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.notes-status {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+.notes-fmts { display: flex; gap: 0.35rem; }
+.notes-fmt-btn {
+  width: auto;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
 </style>
 </head>
 <body>
 <div class="overlay">
-  <div class="content">
-    <h1>Tools</h1>
-    <div class="card">
-      <div class="tool-link" style="margin-bottom:0.5rem;cursor:text;" onclick="document.getElementById('search-input').focus()">
-        <span class="tool-icon" style="opacity:0.4;font-size:0.8rem;">⌕</span>
-        <input type="text" id="search-input" placeholder="Search Google…" style="flex:1;background:transparent;border:none;margin:0;padding:0;font-family:var(--font-mono);font-size:0.82rem;letter-spacing:0.08em;color:white;outline:none;" />
-        <span class="tool-arrow">→</span>
+  <div class="page-layout">
+
+    <!-- Tools column -->
+    <div class="col-tools">
+      <h1>Tools</h1>
+      <div class="card">
+        <div class="tool-link" style="margin-bottom:0.5rem;cursor:text;" onclick="document.getElementById('search-input').focus()">
+          <span class="tool-icon" style="opacity:0.4;font-size:0.8rem;">⌕</span>
+          <input type="text" id="search-input" placeholder="Search Google…" style="flex:1;background:transparent;border:none;margin:0;padding:0;font-family:var(--font-mono);font-size:0.82rem;letter-spacing:0.08em;color:white;outline:none;" />
+          <span class="tool-arrow">→</span>
+        </div>
+        <div class="tool-list">
+          <a href="qr.html" class="tool-link">
+            <span class="tool-icon">▦</span>
+            <span class="tool-name">QR Code Generator</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="hash.html" class="tool-link">
+            <span class="tool-icon">#</span>
+            <span class="tool-name">Hash Generator</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="file-hash.html" class="tool-link">
+            <span class="tool-icon">⊟</span>
+            <span class="tool-name">File Hash Checker</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="diff.html" class="tool-link">
+            <span class="tool-icon">≠</span>
+            <span class="tool-name">Diff Checker</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="password.html" class="tool-link">
+            <span class="tool-icon">*</span>
+            <span class="tool-name">Password Generator</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="color.html" class="tool-link">
+            <span class="tool-icon">◈</span>
+            <span class="tool-name">Color Picker</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="favicon-generator.html" class="tool-link">
+            <span class="tool-icon">⬡</span>
+            <span class="tool-name">Favicon Generator</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="image-converter.html" class="tool-link">
+            <span class="tool-icon">⬡</span>
+            <span class="tool-name">Image Converter</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="photo-metadata.html" class="tool-link">
+            <span class="tool-icon">◎</span>
+            <span class="tool-name">Photo Metadata</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="pdf-merge.html" class="tool-link">
+            <span class="tool-icon">⊞</span>
+            <span class="tool-name">PDF Merger</span>
+            <span class="tool-arrow">→</span>
+          </a>
+          <a href="pdf-compress.html" class="tool-link">
+            <span class="tool-icon">⧖</span>
+            <span class="tool-name">PDF Compressor</span>
+            <span class="tool-arrow">→</span>
+          </a>
+        </div>
+        <hr class="divider" style="margin-top:1.4rem;" />
+        <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
       </div>
-      <div class="tool-list">
-        <a href="qr.html" class="tool-link">
-          <span class="tool-icon">▦</span>
-          <span class="tool-name">QR Code Generator</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="hash.html" class="tool-link">
-          <span class="tool-icon">#</span>
-          <span class="tool-name">Hash Generator</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="file-hash.html" class="tool-link">
-          <span class="tool-icon">⊟</span>
-          <span class="tool-name">File Hash Checker</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="diff.html" class="tool-link">
-          <span class="tool-icon">≠</span>
-          <span class="tool-name">Diff Checker</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="password.html" class="tool-link">
-          <span class="tool-icon">*</span>
-          <span class="tool-name">Password Generator</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="color.html" class="tool-link">
-          <span class="tool-icon">◈</span>
-          <span class="tool-name">Color Picker</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="favicon-generator.html" class="tool-link">
-          <span class="tool-icon">⬡</span>
-          <span class="tool-name">Favicon Generator</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="image-converter.html" class="tool-link">
-          <span class="tool-icon">⬡</span>
-          <span class="tool-name">Image Converter</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="photo-metadata.html" class="tool-link">
-          <span class="tool-icon">◎</span>
-          <span class="tool-name">Photo Metadata</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="pdf-merge.html" class="tool-link">
-          <span class="tool-icon">⊞</span>
-          <span class="tool-name">PDF Merger</span>
-          <span class="tool-arrow">→</span>
-        </a>
-        <a href="pdf-compress.html" class="tool-link">
-          <span class="tool-icon">⧖</span>
-          <span class="tool-name">PDF Compressor</span>
-          <span class="tool-arrow">→</span>
-        </a>
-      </div>
-      <hr class="divider" style="margin-top:1.4rem;" />
-      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
     </div>
+
+    <!-- Notes column -->
+    <div class="col-notes">
+      <h1>Notes</h1>
+      <div class="card">
+        <div class="notes-toolbar">
+          <input type="text" id="notes-filename" class="notes-filename" value="note" placeholder="filename" />
+          <button class="notes-action-btn" onclick="notesNew()">New</button>
+          <button class="notes-action-btn" onclick="notesOpen()">Open</button>
+          <input type="file" id="notes-open-input" accept=".txt,.md,.csv,.json,.html,.css,.js" style="display:none" />
+        </div>
+        <hr class="divider" style="margin:0 0 0.8rem;" />
+        <textarea id="notes-editor" placeholder="Start typing…" spellcheck="false"></textarea>
+        <div class="notes-statusbar">
+          <span class="notes-status" id="notes-status">0 words · 0 chars</span>
+          <div class="notes-fmts">
+            <button class="notes-fmt-btn" onclick="notesSave('txt')">TXT</button>
+            <button class="notes-fmt-btn" onclick="notesSave('md')">MD</button>
+            <button class="notes-fmt-btn" onclick="notesSave('json')">JSON</button>
+            <button class="notes-fmt-btn" onclick="notesSave('html')">HTML</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
-</body>
 <script>
+  // Search
   function doSearch() {
     const q = document.getElementById('search-input').value.trim();
     if (q) window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
@@ -129,5 +219,85 @@
   document.getElementById('search-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') doSearch();
   });
+
+  // Notes
+  const editor     = document.getElementById('notes-editor');
+  const statusEl   = document.getElementById('notes-status');
+  const filenameEl = document.getElementById('notes-filename');
+
+  const saved = sessionStorage.getItem('notes-content');
+  if (saved) editor.value = saved;
+
+  editor.addEventListener('input', () => {
+    sessionStorage.setItem('notes-content', editor.value);
+    updateStatus();
+  });
+
+  function updateStatus() {
+    const text = editor.value;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    statusEl.textContent = `${words} word${words !== 1 ? 's' : ''} · ${text.length} chars`;
+  }
+
+  function notesSave(ext) {
+    const name = (filenameEl.value.trim() || 'note').replace(/\.[^.]+$/, '');
+    let content = editor.value;
+    let mime = 'text/plain';
+    if (ext === 'json') {
+      try { JSON.parse(content); } catch(e) { content = JSON.stringify({ content }, null, 2); }
+      mime = 'application/json';
+    } else if (ext === 'html') {
+      if (!content.trim().startsWith('<'))
+        content = `<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><title>${name}</title></head>\n<body>\n${content.split('\n').map(l => `<p>${l}</p>`).join('\n')}\n</body>\n</html>`;
+      mime = 'text/html';
+    } else if (ext === 'md') {
+      mime = 'text/markdown';
+    }
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    statusEl.textContent = `Saved ${name}.${ext}`;
+    setTimeout(updateStatus, 2000);
+  }
+
+  function notesNew() {
+    if (editor.value && !confirm('Discard current note?')) return;
+    editor.value = '';
+    filenameEl.value = 'note';
+    sessionStorage.removeItem('notes-content');
+    updateStatus();
+    editor.focus();
+  }
+
+  function notesOpen() { document.getElementById('notes-open-input').click(); }
+
+  document.getElementById('notes-open-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    filenameEl.value = file.name.replace(/\.[^.]+$/, '');
+    const reader = new FileReader();
+    reader.onload = ev => {
+      editor.value = ev.target.result;
+      sessionStorage.setItem('notes-content', editor.value);
+      updateStatus();
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  editor.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = editor.selectionStart;
+      editor.value = editor.value.substring(0, s) + '    ' + editor.value.substring(editor.selectionEnd);
+      editor.selectionStart = editor.selectionEnd = s + 4;
+    }
+  });
+
+  updateStatus();
 </script>
+</body>
 </html>
