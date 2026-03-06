@@ -85,6 +85,43 @@ input[type="color"] {
   border: 1px solid rgba(255,255,255,0.08);
 }
 .shade:hover { transform: scaleY(1.3); }
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 0.4rem;
+}
+.palette-swatch {
+  height: 44px;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s ease;
+  position: relative;
+}
+.palette-swatch:hover { transform: scale(1.08); z-index: 1; }
+.palette-swatch.copied { outline: 2px solid rgba(255,255,255,0.7); }
+
+.palette-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+.palette-tab {
+  width: auto;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+}
+.palette-tab.active {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.7);
+}
+.palette-tab:hover { letter-spacing: 0.14em; }
 </style>
 </head>
 <body>
@@ -119,6 +156,15 @@ input[type="color"] {
 
       <label style="margin-top:1.2rem;">Shades</label>
       <div class="shades-row" id="shades"></div>
+
+      <label style="margin-top:1.2rem;">Palette</label>
+      <div class="palette-tabs">
+        <button class="palette-tab active" onclick="setPaletteMode('complementary',this)">Complementary</button>
+        <button class="palette-tab" onclick="setPaletteMode('triadic',this)">Triadic</button>
+        <button class="palette-tab" onclick="setPaletteMode('analogous',this)">Analogous</button>
+        <button class="palette-tab" onclick="setPaletteMode('split',this)">Split</button>
+      </div>
+      <div class="palette-grid" id="palette"></div>
       <hr class="divider" style="margin-top:1.4rem;" />
       <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
     </div>
@@ -184,6 +230,8 @@ input[type="color"] {
       };
       shadesEl.appendChild(div);
     }
+
+    renderPalette();
   }
 
   function copyVal(el, type) {
@@ -192,6 +240,69 @@ input[type="color"] {
     navigator.clipboard.writeText(text);
     el.classList.add('copied');
     setTimeout(() => el.classList.remove('copied'), 1000);
+  }
+
+  let paletteMode = 'complementary';
+
+  function setPaletteMode(mode, btn) {
+    paletteMode = mode;
+    document.querySelectorAll('.palette-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPalette();
+  }
+
+  function renderPalette() {
+    const {h, s, l} = rgbToHsl(...Object.values(hexToRgb(currentHex)));
+    let colors = [];
+
+    if (paletteMode === 'complementary') {
+      colors = [
+        currentHex,
+        hslToHex((h+180)%360, s, l),
+        hslToHex(h, s, Math.max(l-20,10)),
+        hslToHex((h+180)%360, s, Math.min(l+15,90)),
+        hslToHex(h, Math.max(s-20,10), Math.min(l+20,90)),
+      ];
+    } else if (paletteMode === 'triadic') {
+      colors = [
+        currentHex,
+        hslToHex((h+120)%360, s, l),
+        hslToHex((h+240)%360, s, l),
+        hslToHex((h+120)%360, s, Math.min(l+15,90)),
+        hslToHex((h+240)%360, s, Math.min(l+15,90)),
+      ];
+    } else if (paletteMode === 'analogous') {
+      colors = [
+        hslToHex((h-40+360)%360, s, l),
+        hslToHex((h-20+360)%360, s, l),
+        currentHex,
+        hslToHex((h+20)%360, s, l),
+        hslToHex((h+40)%360, s, l),
+      ];
+    } else if (paletteMode === 'split') {
+      colors = [
+        currentHex,
+        hslToHex((h+150)%360, s, l),
+        hslToHex((h+210)%360, s, l),
+        hslToHex((h+150)%360, s, Math.min(l+20,90)),
+        hslToHex((h+210)%360, s, Math.min(l+20,90)),
+      ];
+    }
+
+    const grid = document.getElementById('palette');
+    grid.innerHTML = '';
+    colors.forEach(hex => {
+      const div = document.createElement('div');
+      div.className = 'palette-swatch';
+      div.style.background = hex;
+      div.title = hex;
+      div.onclick = () => {
+        navigator.clipboard.writeText(hex);
+        div.classList.add('copied');
+        setTimeout(() => div.classList.remove('copied'), 800);
+      };
+      grid.appendChild(div);
+    });
   }
 
   updateColor('#6e8efb');
