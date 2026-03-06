@@ -53,6 +53,11 @@
   <div class="content">
     <h1>Tools</h1>
     <div class="card">
+      <div class="tool-link" style="margin-bottom:0.5rem;cursor:text;" onclick="document.getElementById('search-input').focus()">
+        <span class="tool-icon" style="opacity:0.4;font-size:0.8rem;">⌕</span>
+        <input type="text" id="search-input" placeholder="Search Google…" style="flex:1;background:transparent;border:none;margin:0;padding:0;font-family:var(--font-mono);font-size:0.82rem;letter-spacing:0.08em;color:white;outline:none;" />
+        <span class="tool-arrow">→</span>
+      </div>
       <div class="tool-list">
         <a href="qr.html" class="tool-link">
           <span class="tool-icon">▦</span>
@@ -84,9 +89,25 @@
           <span class="tool-name">PDF Merger</span>
           <span class="tool-arrow">→</span>
         </a>
+        <a href="pdf-compress.html" class="tool-link">
+          <span class="tool-icon">⧖</span>
+          <span class="tool-name">PDF Compressor</span>
+          <span class="tool-arrow">→</span>
+        </a>
       </div>
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
     </div>
   </div>
 </div>
 </body>
+<script>
+  function doSearch() {
+    const q = document.getElementById('search-input').value.trim();
+    if (q) window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+  }
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+</script>
 </html>
