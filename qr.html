@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QR Generator</title>
+<link rel="stylesheet" href="tools.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+#qr-output {
+  margin-top: 1.6rem;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeUp 0.4s ease forwards;
+}
+#qr-wrap {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 3px;
+  padding: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.15), 0 4px 24px rgba(0,0,0,0.2);
+}
+#qr-box canvas,
+#qr-box img {
+  display: block;
+  border-radius: 1px;
+}
+.download-link {
+  color: white;
+  text-decoration: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+  padding-bottom: 2px;
+  font-family: var(--font-mono);
+  transition: border-color 0.3s ease, letter-spacing 0.3s ease;
+}
+.download-link:hover {
+  border-bottom-color: white;
+  letter-spacing: 0.2em;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>QR Generator</h1>
+    <div class="card">
+      <label for="qr-input">URL or text</label>
+      <input type="text" id="qr-input" placeholder="https://example.com" />
+      <button onclick="generateQR()">Generate</button>
+
+      <div id="qr-output">
+        <div id="qr-wrap">
+          <div id="qr-box"></div>
+        </div>
+        <a id="qr-download" class="download-link" download="qrcode.png">Download PNG</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  let qrInstance = null;
+  function generateQR() {
+    const input = document.getElementById('qr-input').value.trim();
+    if (!input) return;
+    const box = document.getElementById('qr-box');
+    box.innerHTML = '';
+    qrInstance = new QRCode(box, {
+      text: input,
+      width: 200,
+      height: 200,
+      colorDark: '#1a1a1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    document.getElementById('qr-output').style.display = 'flex';
+    setTimeout(() => {
+      const canvas = box.querySelector('canvas');
+      if (canvas) document.getElementById('qr-download').href = canvas.toDataURL('image/png');
+    }, 100);
+  }
+  document.getElementById('qr-input').addEventListener('keydown', e => { if (e.key === 'Enter') generateQR(); });
+</script>
+</body>
+</html>

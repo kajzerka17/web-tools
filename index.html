@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tools</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.tool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.tool-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 2px;
+  color: white;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  transition: background 0.25s ease, border-color 0.25s ease, padding-left 0.25s ease;
+}
+.tool-link:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.45);
+  padding-left: 1.4rem;
+}
+.tool-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+  min-width: 20px;
+  text-align: center;
+}
+.tool-name {
+  flex: 1;
+}
+.tool-arrow {
+  opacity: 0.3;
+  font-size: 0.7rem;
+  transition: opacity 0.2s ease;
+}
+.tool-link:hover .tool-arrow { opacity: 0.8; }
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <h1>Tools</h1>
+    <div class="card">
+      <div class="tool-list">
+        <a href="qr.html" class="tool-link">
+          <span class="tool-icon">▦</span>
+          <span class="tool-name">QR Code Generator</span>
+          <span class="tool-arrow">→</span>
+        </a>
+        <a href="hash.html" class="tool-link">
+          <span class="tool-icon">#</span>
+          <span class="tool-name">Hash Generator</span>
+          <span class="tool-arrow">→</span>
+        </a>
+        <a href="password.html" class="tool-link">
+          <span class="tool-icon">*</span>
+          <span class="tool-name">Password Generator</span>
+          <span class="tool-arrow">→</span>
+        </a>
+        <a href="color.html" class="tool-link">
+          <span class="tool-icon">◈</span>
+          <span class="tool-name">Color Picker</span>
+          <span class="tool-arrow">→</span>
+        </a>
+        <a href="image-converter.html" class="tool-link">
+          <span class="tool-icon">⬡</span>
+          <span class="tool-name">Image Converter</span>
+          <span class="tool-arrow">→</span>
+        </a>
+        <a href="pdf-merge.html" class="tool-link">
+          <span class="tool-icon">⊞</span>
+          <span class="tool-name">PDF Merger</span>
+          <span class="tool-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Image Converter</title>
+<link rel="stylesheet" href="tools.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js"></script>
+<style>
+.drop-zone {
+  border: 1px dashed rgba(255,255,255,0.3);
+  border-radius: 3px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  margin: 0; padding: 0; border: none; background: none;
+}
+.drop-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+.drop-text {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.drop-text span {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+.heic-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 2px;
+  padding: 0.15rem 0.45rem;
+  color: rgba(255,255,255,0.7);
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+.preview-wrap {
+  display: none;
+  margin-bottom: 1.2rem;
+  animation: fadeUp 0.3s ease forwards;
+}
+#img-preview {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.2);
+}
+.img-info {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 0.5rem;
+}
+.heic-notice {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255,200,100,0.8);
+  letter-spacing: 0.08em;
+  margin-top: 0.4rem;
+  display: none;
+}
+.format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.fmt-btn {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.25);
+}
+.fmt-btn.active {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.7);
+}
+.fmt-btn:hover { letter-spacing: 0.15em; }
+.quality-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+.quality-row input[type="range"] {
+  flex: 1;
+  margin-bottom: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  height: 3px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: rgba(255,255,255,0.25);
+  height: 3px;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: white;
+  border-radius: 50%;
+  margin-top: -5.5px;
+  transition: transform 0.2s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+.quality-num {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  min-width: 36px;
+  text-align: right;
+}
+#status-msg {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  letter-spacing: 0.08em;
+  margin-top: 0.6rem;
+  min-height: 1rem;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Image Converter</h1>
+    <div class="card">
+      <label>Upload image <span class="heic-badge">HEIC supported</span></label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*,.heic,.heif" onchange="loadImage(this)" />
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop image here or click to browse<span>JPG · PNG · WEBP · BMP · HEIC · HEIF</span></div>
+      </div>
+
+      <div class="preview-wrap" id="preview-wrap">
+        <img id="img-preview" />
+        <div class="img-info" id="img-info"></div>
+        <div class="heic-notice" id="heic-notice">⚠ HEIC decoded for preview — original quality preserved on export</div>
+      </div>
+
+      <label>Convert to</label>
+      <div class="format-grid">
+        <button class="fmt-btn active" onclick="setFormat('image/jpeg','jpg',this)">JPEG</button>
+        <button class="fmt-btn" onclick="setFormat('image/png','png',this)">PNG</button>
+        <button class="fmt-btn" onclick="setFormat('image/webp','webp',this)">WEBP</button>
+        <button class="fmt-btn" onclick="setFormat('image/bmp','bmp',this)">BMP</button>
+      </div>
+
+      <label>Quality <span style="text-transform:none;letter-spacing:0;font-size:0.72rem;opacity:0.6;">(JPEG / WEBP)</span></label>
+      <div class="quality-row">
+        <input type="range" id="quality" min="10" max="100" value="92"
+          oninput="document.getElementById('quality-num').textContent=this.value+'%'" />
+        <span class="quality-num" id="quality-num">92%</span>
+      </div>
+
+      <button onclick="convertImage()">Convert & Download</button>
+      <div id="status-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentImg   = null;
+  let targetMime   = 'image/jpeg';
+  let targetExt    = 'jpg';
+  let originalName = 'converted';
+
+  const statusEl = document.getElementById('status-msg');
+
+  async function loadImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    statusEl.textContent = '';
+    originalName = file.name.replace(/\.[^.]+$/, '');
+    const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
+
+    let objectUrl;
+
+    if (isHeic) {
+      statusEl.textContent = 'Decoding HEIC…';
+      try {
+        const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.95 });
+        const blob = Array.isArray(result) ? result[0] : result;
+        objectUrl = URL.createObjectURL(blob);
+        document.getElementById('heic-notice').style.display = 'block';
+        statusEl.textContent = '';
+      } catch(err) {
+        statusEl.textContent = 'HEIC decode failed: ' + err.message;
+        return;
+      }
+    } else {
+      objectUrl = URL.createObjectURL(file);
+      document.getElementById('heic-notice').style.display = 'none';
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      currentImg = img;
+      document.getElementById('img-preview').src = objectUrl;
+      document.getElementById('preview-wrap').style.display = 'block';
+      document.getElementById('img-info').textContent =
+        `${file.name}  ·  ${img.width}×${img.height}px  ·  ${(file.size / 1024).toFixed(1)} KB`;
+    };
+    img.src = objectUrl;
+  }
+
+  function setFormat(mime, ext, btn) {
+    targetMime = mime;
+    targetExt  = ext;
+    document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function convertImage() {
+    if (!currentImg) { statusEl.textContent = 'Upload an image first.'; return; }
+    const quality = parseInt(document.getElementById('quality').value) / 100;
+    const canvas  = document.createElement('canvas');
+    canvas.width  = currentImg.naturalWidth;
+    canvas.height = currentImg.naturalHeight;
+    canvas.getContext('2d').drawImage(currentImg, 0, 0);
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = `${originalName}.${targetExt}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      statusEl.textContent = `Saved as ${originalName}.${targetExt}`;
+    }, targetMime, quality);
+  }
+
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type.startsWith('image/') || /\.(heic|heif)$/i.test(file.name))) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      document.getElementById('file-input').files = dt.files;
+      loadImage(document.getElementById('file-input'));
+    }
+  });
+</script>
+</body>
+</html>

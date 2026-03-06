@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PDF Merger</title>
+<link rel="stylesheet" href="tools.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+.drop-zone {
+  border: 1px dashed rgba(255,255,255,0.3);
+  border-radius: 3px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  margin: 0; padding: 0; border: none; background: none;
+}
+.drop-icon { font-size: 1.8rem; opacity: 0.45; margin-bottom: 0.4rem; }
+.drop-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.drop-text span {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  opacity: 0.6;
+}
+
+/* File list */
+#file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  padding: 0.55rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.85);
+  animation: fadeUp 0.25s ease forwards;
+  cursor: grab;
+  user-select: none;
+}
+.file-item.dragging {
+  opacity: 0.4;
+  border-color: rgba(255,255,255,0.5);
+}
+.file-item.drag-target {
+  border-color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.1);
+}
+.file-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-pages {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.file-remove {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  width: auto;
+  line-height: 1;
+  letter-spacing: 0;
+  transition: color 0.2s ease;
+}
+.file-remove:hover {
+  color: rgba(255,255,255,0.8);
+  background: none;
+  border: none;
+  letter-spacing: 0;
+}
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+#merge-btn { display: none; }
+
+#status {
+  margin-top: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  letter-spacing: 0.08em;
+  min-height: 1.2rem;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>PDF Merger</h1>
+    <div class="card">
+      <label>Add PDF files</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf,application/pdf" multiple />
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop PDFs here or click to browse<span>Multiple files supported</span></div>
+      </div>
+
+      <div id="file-list"></div>
+      <div class="hint" id="drag-hint" style="display:none;">drag to reorder</div>
+
+      <button id="merge-btn" onclick="mergePDFs()">Merge & Download</button>
+      <div id="status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { PDFDocument } = PDFLib;
+  let files = []; // {file, name, pages}
+  let dragSrc = null;
+
+  const fileInput = document.getElementById('file-input');
+  const dropZone  = document.getElementById('drop-zone');
+  const fileList  = document.getElementById('file-list');
+  const mergeBtn  = document.getElementById('merge-btn');
+  const status    = document.getElementById('status');
+  const dragHint  = document.getElementById('drag-hint');
+
+  fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const dropped = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+    if (dropped.length) addFiles(dropped);
+  });
+
+  async function addFiles(newFiles) {
+    for (const f of newFiles) {
+      const buf = await f.arrayBuffer();
+      let pages = '?';
+      try {
+        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+        pages = doc.getPageCount();
+      } catch(e) {}
+      files.push({ file: f, name: f.name, pages });
+    }
+    render();
+  }
+
+  function render() {
+    fileList.innerHTML = '';
+    files.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.draggable = true;
+      item.dataset.index = i;
+      item.innerHTML = `
+        <span class="file-handle">⠿</span>
+        <span class="file-name">${f.name}</span>
+        <span class="file-pages">${f.pages}p</span>
+        <button class="file-remove" onclick="removeFile(${i})" title="Remove">✕</button>
+      `;
+      item.addEventListener('dragstart', onDragStart);
+      item.addEventListener('dragover',  onDragOver);
+      item.addEventListener('drop',      onDrop);
+      item.addEventListener('dragend',   onDragEnd);
+      fileList.appendChild(item);
+    });
+
+    const hasFiles = files.length > 0;
+    mergeBtn.style.display = hasFiles ? 'block' : 'none';
+    dragHint.style.display = files.length > 1 ? 'block' : 'none';
+    status.textContent = '';
+  }
+
+  function removeFile(i) {
+    files.splice(i, 1);
+    render();
+  }
+
+  // Drag-to-reorder
+  function onDragStart(e) {
+    dragSrc = parseInt(e.currentTarget.dataset.index);
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrc);
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('drag-target'));
+    e.currentTarget.classList.add('drag-target');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    const target = parseInt(e.currentTarget.dataset.index);
+    if (dragSrc === null || dragSrc === target) return;
+    const moved = files.splice(dragSrc, 1)[0];
+    files.splice(target, 0, moved);
+    render();
+  }
+  function onDragEnd() {
+    document.querySelectorAll('.file-item').forEach(el => {
+      el.classList.remove('dragging', 'drag-target');
+    });
+    dragSrc = null;
+  }
+
+  async function mergePDFs() {
+    if (files.length < 1) return;
+    status.textContent = 'Merging…';
+    mergeBtn.disabled = true;
+
+    try {
+      const merged = await PDFDocument.create();
+
+      for (const f of files) {
+        const buf = await f.file.arrayBuffer();
+        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+        const indices = doc.getPageIndices();
+        const copied = await merged.copyPages(doc, indices);
+        copied.forEach(p => merged.addPage(p));
+      }
+
+      const bytes = await merged.save();
+      const blob  = new Blob([bytes], { type: 'application/pdf' });
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement('a');
+      a.href      = url;
+      a.download  = 'merged.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      const total = files.reduce((s, f) => s + (parseInt(f.pages) || 0), 0);
+      status.textContent = `Done — ${files.length} files · ${total} pages`;
+    } catch(err) {
+      status.textContent = 'Error: ' + err.message;
+    }
+
+    mergeBtn.disabled = false;
+  }
+</script>
+</body>
+</html>

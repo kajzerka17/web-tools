@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hash Generator</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.hash-row {
+  margin-bottom: 1rem;
+}
+.hash-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.hash-value {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  padding: 0.6rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.88);
+  word-break: break-all;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  position: relative;
+}
+.hash-value:hover {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(0,0,0,0.3);
+}
+.hash-value.copied {
+  border-color: rgba(255,255,255,0.6);
+  color: white;
+}
+.copy-hint {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 0.25rem;
+  letter-spacing: 0.08em;
+}
+#results {
+  margin-top: 1.4rem;
+  display: none;
+  animation: fadeUp 0.3s ease forwards;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Hash Generator</h1>
+    <div class="card">
+      <label for="hash-input">Text to hash</label>
+      <textarea id="hash-input" placeholder="Enter any text..."></textarea>
+      <button onclick="generateHashes()">Generate Hashes</button>
+
+      <div id="results">
+        <hr class="divider" />
+        <div class="hash-row">
+          <div class="hash-label">MD5 (via SubtleCrypto — SHA-1 used as fallback)</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-1</div>
+          <div class="hash-value" id="sha1" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-256</div>
+          <div class="hash-value" id="sha256" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-384</div>
+          <div class="hash-value" id="sha384" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-512</div>
+          <div class="hash-value" id="sha512" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  async function digest(algo, text) {
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest(algo, enc.encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function generateHashes() {
+    const text = document.getElementById('hash-input').value;
+    if (!text) return;
+
+    document.getElementById('results').style.display = 'block';
+
+    const [s1, s256, s384, s512] = await Promise.all([
+      digest('SHA-1', text),
+      digest('SHA-256', text),
+      digest('SHA-384', text),
+      digest('SHA-512', text),
+    ]);
+
+    document.getElementById('sha1').textContent = s1;
+    document.getElementById('sha256').textContent = s256;
+    document.getElementById('sha384').textContent = s384;
+    document.getElementById('sha512').textContent = s512;
+  }
+
+  function copyHash(el) {
+    navigator.clipboard.writeText(el.textContent);
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 1200);
+  }
+
+  document.getElementById('hash-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) generateHashes();
+  });
+</script>
+</body>
+</html>

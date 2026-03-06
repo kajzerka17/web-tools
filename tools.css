@@ -1,0 +1,275 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-hover: rgba(255, 255, 255, 0.18);
+  --glass-focus: rgba(255, 255, 255, 0.22);
+  --text-main: rgba(255, 255, 255, 1);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-label: rgba(255, 255, 255, 0.65);
+  --blur: blur(14px);
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  min-height: 100vh;
+  background-image: url('988.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  font-family: var(--font-display);
+  color: var(--text-main);
+}
+
+.overlay {
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 40px;
+}
+
+.content {
+  text-align: left;
+  color: white;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.5s ease forwards;
+}
+
+/* Only animate transform on the wrapper — animating opacity on a parent
+   breaks backdrop-filter blur on children (browser compositing bug).
+   Text/links fade in separately via fadeIn. */
+@keyframes slideUp {
+  from { transform: translateY(14px); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.content h1,
+.content .back-link,
+.content .note,
+.content label {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Back link */
+.back-link {
+  display: inline-block;
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+  padding-bottom: 2px;
+  margin-bottom: 2rem;
+  transition: border-color 0.3s ease, letter-spacing 0.3s ease;
+}
+.back-link:hover {
+  border-bottom-color: white;
+  letter-spacing: 0.12em;
+}
+
+/* Page title */
+h1 {
+  font-size: 3rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  line-height: 1;
+}
+
+/* Card — isolation:isolate ensures backdrop-filter always gets its own
+   compositing layer, independent of any ancestor opacity animation. */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
+  padding: 2rem 2.2rem 2.2rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  margin-bottom: 1rem;
+  isolation: isolate;
+  will-change: transform;
+}
+
+/* Labels */
+label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-label);
+  margin-bottom: 0.45rem;
+  font-family: var(--font-mono);
+}
+
+/* Inputs */
+input[type="text"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  width: 100%;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid var(--glass-border);
+  border-radius: 2px;
+  padding: 0.65rem 0.9rem;
+  color: white;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  outline: none;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.1rem;
+}
+
+input[type="text"]::placeholder,
+input[type="url"]::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(255,255,255,0.7);
+  background: var(--glass-focus);
+}
+
+select option {
+  background: #2a2a2a;
+  color: white;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 90px;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+
+/* Checkbox row */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+.checkbox-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: white;
+  margin-bottom: 0;
+}
+.checkbox-row label {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+/* Buttons */
+button, .btn {
+  width: 100%;
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.45);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.65rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.3s ease, border-color 0.3s ease, letter-spacing 0.25s ease;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+button:hover, .btn:hover {
+  background: rgba(255,255,255,0.24);
+  border-color: white;
+  letter-spacing: 0.2em;
+}
+
+button.secondary {
+  background: transparent;
+  border-color: rgba(255,255,255,0.25);
+  font-size: 0.75rem;
+  padding: 0.5rem;
+}
+button.secondary:hover {
+  border-color: rgba(255,255,255,0.6);
+}
+
+/* Output / result box */
+.result-box {
+  margin-top: 1.4rem;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 2px;
+  padding: 1rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.9);
+  word-break: break-all;
+  line-height: 1.6;
+  display: none;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+.result-box.visible {
+  display: block;
+}
+
+/* Copy row */
+.copy-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.6rem;
+}
+.copy-btn {
+  width: auto;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+}
+
+/* Row layout */
+.row {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1.1rem;
+}
+.row > * { flex: 1; margin-bottom: 0; }
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 1.2rem 0;
+}
+
+/* Small note text */
+.note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 0.5rem;
+}
