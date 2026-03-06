@@ -26,8 +26,7 @@
   inset: 0;
   opacity: 0;
   cursor: pointer;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   margin: 0; padding: 0; border: none; background: none;
 }
 .drop-icon { font-size: 1.8rem; opacity: 0.45; margin-bottom: 0.4rem; }
@@ -38,14 +37,8 @@
   color: var(--text-muted);
   text-transform: uppercase;
 }
-.drop-text span {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.68rem;
-  opacity: 0.6;
-}
+.drop-text span { display: block; margin-top: 0.25rem; font-size: 0.68rem; opacity: 0.6; }
 
-/* File list */
 #file-list {
   display: flex;
   flex-direction: column;
@@ -64,47 +57,80 @@
   font-size: 0.78rem;
   color: rgba(255,255,255,0.85);
   animation: fadeUp 0.25s ease forwards;
-  cursor: grab;
   user-select: none;
 }
-.file-item.dragging {
-  opacity: 0.4;
-  border-color: rgba(255,255,255,0.5);
-}
-.file-item.drag-target {
-  border-color: rgba(255,255,255,0.6);
-  background: rgba(255,255,255,0.1);
-}
+.file-item.dragging { opacity: 0.4; border-color: rgba(255,255,255,0.5); }
+.file-item.drag-over-top { border-top: 2px solid rgba(255,255,255,0.7); }
+.file-item.drag-over-bottom { border-bottom: 2px solid rgba(255,255,255,0.7); }
+
 .file-handle {
   color: var(--text-muted);
   cursor: grab;
   font-size: 0.9rem;
   line-height: 1;
+  flex-shrink: 0;
+}
+.file-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.file-type-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-pages {
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  white-space: nowrap;
+.file-meta { color: var(--text-muted); font-size: 0.7rem; white-space: nowrap; flex-shrink: 0; }
+
+.reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
 }
-.file-remove {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.35);
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0;
+.reorder-btn {
   width: auto;
+  padding: 0;
+  width: 18px;
+  height: 14px;
+  font-size: 0.55rem;
   line-height: 1;
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
+  border-radius: 1px;
   letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reorder-btn:hover { background: rgba(255,255,255,0.18); letter-spacing: 0; }
+.reorder-btn:disabled { opacity: 0.2; pointer-events: none; }
+
+.file-remove {
+  background: none; border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0; width: auto;
+  line-height: 1; letter-spacing: 0;
   transition: color 0.2s ease;
+  flex-shrink: 0;
 }
-.file-remove:hover {
-  color: rgba(255,255,255,0.8);
-  background: none;
-  border: none;
-  letter-spacing: 0;
-}
+.file-remove:hover { color: rgba(255,255,255,0.8); background: none; border: none; letter-spacing: 0; }
 
 .hint {
   font-family: var(--font-mono);
@@ -114,9 +140,7 @@
   text-align: center;
   margin-bottom: 1rem;
 }
-
 #merge-btn { display: none; }
-
 #status {
   margin-top: 0.8rem;
   font-family: var(--font-mono);
@@ -126,6 +150,11 @@
   letter-spacing: 0.08em;
   min-height: 1.2rem;
 }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 </style>
 </head>
 <body>
@@ -134,18 +163,21 @@
     <a href="index.html" class="back-link">← Tools</a>
     <h1>PDF Merger</h1>
     <div class="card">
-      <label>Add PDF files</label>
+      <label>Add files</label>
       <div class="drop-zone" id="drop-zone">
-        <input type="file" id="file-input" accept=".pdf,application/pdf" multiple />
+        <input type="file" id="file-input" accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple />
         <div class="drop-icon">⬆</div>
-        <div class="drop-text">Drop PDFs here or click to browse<span>Multiple files supported</span></div>
+        <div class="drop-text">Drop files here or click to browse
+          <span>PDF · TXT · MD · PNG · JPG · WEBP</span>
+        </div>
       </div>
 
       <div id="file-list"></div>
-      <div class="hint" id="drag-hint" style="display:none;">drag to reorder</div>
+      <div class="hint" id="drag-hint" style="display:none;">drag rows or use ↑↓ arrows to reorder</div>
 
-      <button id="merge-btn" onclick="mergePDFs()">Merge & Download</button>
+      <button id="merge-btn" onclick="mergeAll()">Merge & Download PDF</button>
       <div id="status"></div>
+
       <hr class="divider" style="margin-top:1.4rem;" />
       <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
     </div>
@@ -153,8 +185,8 @@
 </div>
 
 <script>
-  const { PDFDocument } = PDFLib;
-  let files = []; // {file, name, pages}
+  const { PDFDocument, rgb, StandardFonts } = PDFLib;
+  let files = []; // { file, name, type, meta, thumbUrl }
   let dragSrc = null;
 
   const fileInput = document.getElementById('file-input');
@@ -171,19 +203,38 @@
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
-    const dropped = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
-    if (dropped.length) addFiles(dropped);
+    addFiles(Array.from(e.dataTransfer.files));
   });
+
+  function getFileType(f) {
+    if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) return 'pdf';
+    if (f.type.startsWith('image/')) return 'image';
+    if (f.type === 'text/plain' || f.name.endsWith('.txt') || f.name.endsWith('.md')) return 'text';
+    return 'unknown';
+  }
 
   async function addFiles(newFiles) {
     for (const f of newFiles) {
-      const buf = await f.arrayBuffer();
-      let pages = '?';
-      try {
-        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
-        pages = doc.getPageCount();
-      } catch(e) {}
-      files.push({ file: f, name: f.name, pages });
+      const type = getFileType(f);
+      if (type === 'unknown') continue;
+
+      let meta = '';
+      let thumbUrl = null;
+
+      if (type === 'pdf') {
+        try {
+          const buf = await f.arrayBuffer();
+          const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+          meta = doc.getPageCount() + 'p';
+        } catch(e) { meta = '?p'; }
+      } else if (type === 'image') {
+        thumbUrl = URL.createObjectURL(f);
+        meta = (f.size / 1024).toFixed(0) + 'KB';
+      } else if (type === 'text') {
+        meta = (f.size / 1024).toFixed(1) + 'KB';
+      }
+
+      files.push({ file: f, name: f.name, type, meta, thumbUrl });
     }
     render();
   }
@@ -195,12 +246,28 @@
       item.className = 'file-item';
       item.draggable = true;
       item.dataset.index = i;
+
+      // Thumbnail or icon
+      let iconHtml;
+      if (f.type === 'image' && f.thumbUrl) {
+        iconHtml = `<img class="file-thumb" src="${f.thumbUrl}" />`;
+      } else {
+        const label = f.type === 'pdf' ? 'PDF' : f.name.endsWith('.md') ? 'MD' : 'TXT';
+        iconHtml = `<span class="file-type-icon">${label}</span>`;
+      }
+
       item.innerHTML = `
         <span class="file-handle">⠿</span>
+        ${iconHtml}
         <span class="file-name">${f.name}</span>
-        <span class="file-pages">${f.pages}p</span>
+        <span class="file-meta">${f.meta}</span>
+        <div class="reorder-btns">
+          <button class="reorder-btn" onclick="moveFile(${i},-1)" ${i===0?'disabled':''} title="Move up">▲</button>
+          <button class="reorder-btn" onclick="moveFile(${i},1)" ${i===files.length-1?'disabled':''} title="Move down">▼</button>
+        </div>
         <button class="file-remove" onclick="removeFile(${i})" title="Remove">✕</button>
       `;
+
       item.addEventListener('dragstart', onDragStart);
       item.addEventListener('dragover',  onDragOver);
       item.addEventListener('drop',      onDrop);
@@ -208,72 +275,149 @@
       fileList.appendChild(item);
     });
 
-    const hasFiles = files.length > 0;
-    mergeBtn.style.display = hasFiles ? 'block' : 'none';
+    mergeBtn.style.display = files.length > 0 ? 'block' : 'none';
     dragHint.style.display = files.length > 1 ? 'block' : 'none';
     status.textContent = '';
   }
 
+  function moveFile(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= files.length) return;
+    [files[i], files[j]] = [files[j], files[i]];
+    render();
+  }
+
   function removeFile(i) {
+    if (files[i].thumbUrl) URL.revokeObjectURL(files[i].thumbUrl);
     files.splice(i, 1);
     render();
   }
 
-  // Drag-to-reorder
+  // Drag reorder
   function onDragStart(e) {
     dragSrc = parseInt(e.currentTarget.dataset.index);
     e.currentTarget.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragSrc);
   }
   function onDragOver(e) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('drag-target'));
-    e.currentTarget.classList.add('drag-target');
+    document.querySelectorAll('.file-item').forEach(el => {
+      el.classList.remove('drag-over-top','drag-over-bottom');
+    });
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    e.currentTarget.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
   }
   function onDrop(e) {
     e.preventDefault();
     const target = parseInt(e.currentTarget.dataset.index);
     if (dragSrc === null || dragSrc === target) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    const insertAfter = e.clientY >= mid;
     const moved = files.splice(dragSrc, 1)[0];
-    files.splice(target, 0, moved);
+    const newIdx = dragSrc < target
+      ? (insertAfter ? target : target - 1)
+      : (insertAfter ? target + 1 : target);
+    files.splice(Math.max(0, Math.min(newIdx, files.length)), 0, moved);
     render();
   }
   function onDragEnd() {
     document.querySelectorAll('.file-item').forEach(el => {
-      el.classList.remove('dragging', 'drag-target');
+      el.classList.remove('dragging','drag-over-top','drag-over-bottom');
     });
     dragSrc = null;
   }
 
-  async function mergePDFs() {
-    if (files.length < 1) return;
+  // Convert any image file to PNG ArrayBuffer via canvas
+  function imageToPngBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(blob => {
+          blob.arrayBuffer().then(resolve).catch(reject);
+        }, 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+      img.src = url;
+    });
+  }
+
+  // ── Merge ──
+  async function mergeAll() {
+    if (!files.length) return;
     status.textContent = 'Merging…';
     mergeBtn.disabled = true;
 
     try {
       const merged = await PDFDocument.create();
+      const font   = await merged.embedFont(StandardFonts.Helvetica);
+      let totalPages = 0;
 
       for (const f of files) {
-        const buf = await f.file.arrayBuffer();
-        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
-        const indices = doc.getPageIndices();
-        const copied = await merged.copyPages(doc, indices);
-        copied.forEach(p => merged.addPage(p));
+        if (f.type === 'pdf') {
+          const buf  = await f.file.arrayBuffer();
+          const doc  = await PDFDocument.load(buf, { ignoreEncryption: true });
+          const copied = await merged.copyPages(doc, doc.getPageIndices());
+          copied.forEach(p => { merged.addPage(p); totalPages++; });
+
+        } else if (f.type === 'image') {
+          const pngBuf = await imageToPngBuffer(f.file);
+          const img    = await merged.embedPng(pngBuf);
+          const { width: iw, height: ih } = img;
+          const pageW = 595, pageH = 842;
+          const scale = Math.min(pageW / iw, pageH / ih, 1);
+          const w = iw * scale, h = ih * scale;
+          const page = merged.addPage([pageW, pageH]);
+          page.drawImage(img, { x: (pageW - w) / 2, y: (pageH - h) / 2, width: w, height: h });
+          totalPages++;
+
+        } else if (f.type === 'text') {
+          const text  = await f.file.text();
+          const lines = text.split('\n');
+          const pageW = 595, pageH = 842;
+          const margin = 50, lineH = 16, fontSize = 11;
+          const maxLines = Math.floor((pageH - margin * 2) / lineH);
+
+          for (let i = 0; i < lines.length; i += maxLines) {
+            const page  = merged.addPage([pageW, pageH]);
+            const chunk = lines.slice(i, i + maxLines);
+            chunk.forEach((line, li) => {
+              // Sanitize to Latin-1 (pdf-lib StandardFonts limitation)
+              const safe = line.replace(/[^\x00-\xFF]/g, '?');
+              // Wrap long lines
+              const maxChars = 90;
+              const display  = safe.length > maxChars ? safe.slice(0, maxChars) + '…' : safe;
+              try {
+                page.drawText(display, {
+                  x: margin,
+                  y: pageH - margin - (li * lineH),
+                  size: fontSize,
+                  font,
+                  color: rgb(0.1, 0.1, 0.1),
+                });
+              } catch(e) {}
+            });
+            totalPages++;
+          }
+        }
       }
 
       const bytes = await merged.save();
       const blob  = new Blob([bytes], { type: 'application/pdf' });
-      const url   = URL.createObjectURL(blob);
       const a     = document.createElement('a');
-      a.href      = url;
+      a.href      = URL.createObjectURL(blob);
       a.download  = 'merged.pdf';
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(a.href);
 
-      const total = files.reduce((s, f) => s + (parseInt(f.pages) || 0), 0);
-      status.textContent = `Done — ${files.length} files · ${total} pages`;
+      status.textContent = `Done — ${files.length} files · ${totalPages} pages`;
     } catch(err) {
       status.textContent = 'Error: ' + err.message;
     }
