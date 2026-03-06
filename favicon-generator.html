@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Favicon Generator</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.drop-zone {
+  border: 1px dashed rgba(255,255,255,0.3);
+  border-radius: 3px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%; height: 100%;
+  margin: 0; padding: 0; border: none; background: none;
+}
+.drop-icon { font-size: 1.8rem; opacity: 0.45; margin-bottom: 0.4rem; }
+.drop-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.drop-text span { display: block; margin-top: 0.25rem; font-size: 0.68rem; opacity: 0.6; }
+
+.preview-section {
+  display: none;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 2px;
+  padding: 0.8rem 1rem;
+}
+.preview-orig {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.preview-info {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+.preview-info strong { color: white; }
+
+.sizes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.size-preview {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 2px;
+  padding: 0.6rem 0.4rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.size-preview:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06); }
+.size-preview canvas {
+  display: block;
+  margin: 0 auto 0.4rem;
+  image-rendering: pixelated;
+}
+.size-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+.download-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.dl-btn {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.5rem;
+}
+
+#status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  letter-spacing: 0.08em;
+  min-height: 1rem;
+  margin-top: 0.4rem;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Favicon Generator</h1>
+    <div class="card">
+      <label>Upload image</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop image here or click to browse<span>PNG · JPG · SVG · WEBP recommended square image</span></div>
+      </div>
+
+      <div class="preview-section" id="preview-section">
+        <div class="preview-row">
+          <img id="preview-orig" class="preview-orig" />
+          <div class="preview-info" id="preview-info"></div>
+        </div>
+
+        <label>Preview sizes</label>
+        <div class="sizes-grid" id="sizes-grid"></div>
+
+        <label>Download</label>
+        <div class="download-grid">
+          <button class="dl-btn" onclick="downloadSize(16)">16×16 .png</button>
+          <button class="dl-btn" onclick="downloadSize(32)">32×32 .png</button>
+          <button class="dl-btn" onclick="downloadSize(48)">48×48 .png</button>
+          <button class="dl-btn" onclick="downloadSize(64)">64×64 .png</button>
+          <button class="dl-btn" onclick="downloadSize(128)">128×128 .png</button>
+          <button class="dl-btn" onclick="downloadSize(192)">192×192 .png</button>
+          <button class="dl-btn" onclick="downloadSize(512)">512×512 .png</button>
+          <button class="dl-btn" onclick="downloadAll()">All sizes .zip</button>
+        </div>
+        <div id="status"></div>
+      </div>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  let currentImg = null;
+  let originalName = 'favicon';
+  const SIZES = [16, 32, 48, 64, 128, 192, 512];
+  const PREVIEW_SIZES = [16, 32, 48, 64];
+
+  const fileInput = document.getElementById('file-input');
+  const dropZone  = document.getElementById('drop-zone');
+
+  fileInput.addEventListener('change', e => loadImage(e.target.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) loadImage(f);
+  });
+
+  function loadImage(file) {
+    if (!file) return;
+    originalName = file.name.replace(/\.[^.]+$/, '');
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      currentImg = img;
+      document.getElementById('preview-orig').src = url;
+      document.getElementById('preview-info').innerHTML =
+        `<strong>${file.name}</strong><br>${img.width}×${img.height}px<br>${formatSize(file.size)}` +
+        (img.width !== img.height ? '<br><span style="color:#e0c46c;">⚠ Not square — will be cropped to center</span>' : '');
+      renderPreviews();
+      document.getElementById('preview-section').style.display = 'block';
+      document.getElementById('status').textContent = '';
+    };
+    img.src = url;
+  }
+
+  function renderToCanvas(size) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    // Center crop if not square
+    const s = Math.min(currentImg.naturalWidth, currentImg.naturalHeight);
+    const sx = (currentImg.naturalWidth - s) / 2;
+    const sy = (currentImg.naturalHeight - s) / 2;
+    ctx.drawImage(currentImg, sx, sy, s, s, 0, 0, size, size);
+    return canvas;
+  }
+
+  function renderPreviews() {
+    const grid = document.getElementById('sizes-grid');
+    grid.innerHTML = '';
+    PREVIEW_SIZES.forEach(size => {
+      const canvas = renderToCanvas(size);
+      // Scale up for display
+      const display = size < 32 ? 32 : size;
+      canvas.style.width  = display + 'px';
+      canvas.style.height = display + 'px';
+      const wrap = document.createElement('div');
+      wrap.className = 'size-preview';
+      wrap.title = `Download ${size}×${size}`;
+      wrap.onclick = () => downloadSize(size);
+      const label = document.createElement('div');
+      label.className = 'size-label';
+      label.textContent = `${size}×${size}`;
+      wrap.appendChild(canvas);
+      wrap.appendChild(label);
+      grid.appendChild(wrap);
+    });
+  }
+
+  function downloadSize(size) {
+    if (!currentImg) return;
+    const canvas = renderToCanvas(size);
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${originalName}-${size}x${size}.png`;
+      a.click();
+      document.getElementById('status').textContent = `Downloaded ${size}×${size} PNG`;
+    }, 'image/png');
+  }
+
+  async function downloadAll() {
+    if (!currentImg) return;
+    document.getElementById('status').textContent = 'Generating ZIP…';
+    const zip = new JSZip();
+    for (const size of SIZES) {
+      const canvas = renderToCanvas(size);
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      const buf = await blob.arrayBuffer();
+      zip.file(`${originalName}-${size}x${size}.png`, buf);
+    }
+    const content = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(content);
+    a.download = `${originalName}-favicons.zip`;
+    a.click();
+    document.getElementById('status').textContent = `Downloaded ${SIZES.length} sizes as ZIP`;
+  }
+
+  function formatSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/(1024*1024)).toFixed(2) + ' MB';
+  }
+</script>
+</body>
+</html>
