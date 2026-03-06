@@ -215,31 +215,37 @@
   }
 
   async function measureUpload(onProgress) {
-    const chunkSize = 500000; // 500KB
-    const chunks = 4;
+    const chunkSize = 65536; // 64KB — safe size, no crypto limit issues
+    const chunks = 20; // 20 × 64KB = 1.28MB total
 
-    // Fill buffer in 65536-byte blocks (Web Crypto API limit)
-    function randomBytes(size) {
-      const buf = new Uint8Array(size);
-      const max = 65536;
-      for (let i = 0; i < size; i += max) {
-        crypto.getRandomValues(buf.subarray(i, Math.min(i + max, size)));
-      }
-      return buf;
+    // Fill buffer safely within 65536 limit
+    const data = new Uint8Array(chunkSize);
+    crypto.getRandomValues(data);
+    const blob = new Blob([data]);
+
+    // Try multiple endpoints, use first that works
+    const endpoints = [
+      'https://www.google.com/gen_204',
+      'https://httpbin.org/post',
+      'https://postman-echo.com/post',
+    ];
+
+    let endpoint = null;
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(ep, { method: 'POST', body: blob, cache: 'no-store' });
+        if (r.ok || r.status === 204 || r.status === 200) { endpoint = ep; break; }
+      } catch(e) {}
     }
 
-    const data = randomBytes(chunkSize);
+    if (!endpoint) throw new Error('No upload endpoint available');
+
     let totalBytes = 0;
     const t0 = performance.now();
 
     for (let i = 0; i < chunks; i++) {
-      const blob = new Blob([data]);
       try {
-        await fetch('https://httpbin.org/post', {
-          method: 'POST',
-          body: blob,
-          cache: 'no-store',
-        });
+        await fetch(endpoint, { method: 'POST', body: blob, cache: 'no-store' });
       } catch(e) {}
       totalBytes += chunkSize;
       onProgress((i + 1) / chunks);
