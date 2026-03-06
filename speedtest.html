@@ -215,12 +215,20 @@
   }
 
   async function measureUpload(onProgress) {
-    // Use httpbin which accepts POST uploads without rate limits
     const chunkSize = 500000; // 500KB
     const chunks = 4;
-    const data = new Uint8Array(chunkSize);
-    crypto.getRandomValues(data);
 
+    // Fill buffer in 65536-byte blocks (Web Crypto API limit)
+    function randomBytes(size) {
+      const buf = new Uint8Array(size);
+      const max = 65536;
+      for (let i = 0; i < size; i += max) {
+        crypto.getRandomValues(buf.subarray(i, Math.min(i + max, size)));
+      }
+      return buf;
+    }
+
+    const data = randomBytes(chunkSize);
     let totalBytes = 0;
     const t0 = performance.now();
 
@@ -232,9 +240,7 @@
           body: blob,
           cache: 'no-store',
         });
-      } catch(e) {
-        // If one chunk fails, still count what we got
-      }
+      } catch(e) {}
       totalBytes += chunkSize;
       onProgress((i + 1) / chunks);
     }
@@ -282,9 +288,10 @@
       // Upload
       setActive('box-ul');
       setStatus('Testing upload…');
+      let ulRunning = 0;
       const ul = await measureUpload(p => {
         setProgress(60 + p * 35);
-        setGauge(ul || dl * 0.3 * p);
+        setGauge(ulRunning || dl * 0.3);
       });
       document.getElementById('val-ul').textContent = ul >= 10 ? Math.round(ul) : ul.toFixed(1);
       setGauge(dl); // return gauge to download value
