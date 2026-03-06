@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Photo Metadata</title>
+<link rel="stylesheet" href="tools.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+<style>
+.drop-zone {
+  border: 1px dashed rgba(255,255,255,0.3);
+  border-radius: 3px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%; height: 100%;
+  margin: 0; padding: 0; border: none; background: none;
+}
+.drop-icon { font-size: 1.8rem; opacity: 0.45; margin-bottom: 0.4rem; }
+.drop-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.drop-text span { display: block; margin-top: 0.25rem; font-size: 0.68rem; opacity: 0.6; }
+
+.preview-wrap {
+  display: none;
+  margin-bottom: 1.2rem;
+  animation: fadeUp 0.3s ease forwards;
+}
+#img-preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.2);
+}
+
+#meta-results { display: none; animation: fadeUp 0.3s ease forwards; }
+
+.meta-group {
+  margin-bottom: 1rem;
+}
+.meta-group-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.meta-key {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.meta-val {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.9);
+  text-align: right;
+  word-break: break-all;
+}
+.no-exif {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0.8rem 0;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Photo Metadata</h1>
+    <div class="card">
+      <label>Upload image</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop image here or click to browse<span>JPG · PNG · WEBP · HEIC</span></div>
+      </div>
+
+      <div class="preview-wrap" id="preview-wrap">
+        <img id="img-preview" />
+      </div>
+
+      <div id="meta-results"></div>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script>
+  const fileInput = document.getElementById('file-input');
+  const dropZone  = document.getElementById('drop-zone');
+
+  fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) loadFile(f);
+  });
+
+  function loadFile(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById('img-preview');
+    preview.src = url;
+    document.getElementById('preview-wrap').style.display = 'block';
+
+    const results = document.getElementById('meta-results');
+    results.style.display = 'block';
+    results.innerHTML = '';
+
+    // Basic file info
+    const basicRows = [
+      ['Filename', file.name],
+      ['File size', formatSize(file.size)],
+      ['MIME type', file.type || '—'],
+      ['Last modified', new Date(file.lastModified).toLocaleString()],
+    ];
+
+    const img = new Image();
+    img.onload = () => {
+      basicRows.push(['Dimensions', `${img.width} × ${img.height} px`]);
+      basicRows.push(['Megapixels', ((img.width * img.height) / 1e6).toFixed(2) + ' MP']);
+      renderGroup('File', basicRows);
+
+      // EXIF
+      EXIF.getData(img, function() {
+        const all = EXIF.getAllTags(this);
+        const exifMap = {
+          'Make': 'Camera make',
+          'Model': 'Camera model',
+          'LensModel': 'Lens',
+          'DateTimeOriginal': 'Date taken',
+          'DateTime': 'Date modified',
+          'ExposureTime': 'Exposure',
+          'FNumber': 'Aperture',
+          'ISOSpeedRatings': 'ISO',
+          'FocalLength': 'Focal length',
+          'Flash': 'Flash',
+          'WhiteBalance': 'White balance',
+          'ExposureProgram': 'Exposure program',
+          'MeteringMode': 'Metering mode',
+          'Software': 'Software',
+          'Artist': 'Artist',
+          'Copyright': 'Copyright',
+          'GPSLatitude': 'GPS latitude',
+          'GPSLongitude': 'GPS longitude',
+          'GPSAltitude': 'GPS altitude',
+        };
+
+        const cameraRows = [];
+        const settingsRows = [];
+        const gpsRows = [];
+        const otherRows = [];
+
+        const cameraKeys = ['Make','Model','LensModel','Software','Artist','Copyright','DateTime','DateTimeOriginal'];
+        const settingsKeys = ['ExposureTime','FNumber','ISOSpeedRatings','FocalLength','Flash','WhiteBalance','ExposureProgram','MeteringMode'];
+        const gpsKeys = ['GPSLatitude','GPSLongitude','GPSAltitude'];
+
+        for (const [tag, label] of Object.entries(exifMap)) {
+          const val = all[tag];
+          if (val === undefined || val === null || val === '') continue;
+          let display = formatExif(tag, val);
+          if (cameraKeys.includes(tag)) cameraRows.push([label, display]);
+          else if (settingsKeys.includes(tag)) settingsRows.push([label, display]);
+          else if (gpsKeys.includes(tag)) gpsRows.push([label, display]);
+          else otherRows.push([label, display]);
+        }
+
+        if (cameraRows.length) renderGroup('Camera', cameraRows);
+        if (settingsRows.length) renderGroup('Exposure', settingsRows);
+        if (gpsRows.length) renderGroup('Location', gpsRows);
+        if (!cameraRows.length && !settingsRows.length && !gpsRows.length) {
+          results.insertAdjacentHTML('beforeend', '<div class="no-exif">No EXIF data found in this image</div>');
+        }
+      });
+    };
+    img.src = url;
+  }
+
+  function renderGroup(title, rows) {
+    const results = document.getElementById('meta-results');
+    const div = document.createElement('div');
+    div.className = 'meta-group';
+    div.innerHTML = `<div class="meta-group-title">${title}</div>` +
+      rows.map(([k,v]) => `<div class="meta-row"><span class="meta-key">${k}</span><span class="meta-val">${v}</span></div>`).join('');
+    results.appendChild(div);
+  }
+
+  function formatExif(tag, val) {
+    if (tag === 'ExposureTime') {
+      if (val < 1) return `1/${Math.round(1/val)}s`;
+      return val + 's';
+    }
+    if (tag === 'FNumber') return `f/${val}`;
+    if (tag === 'FocalLength') return `${val}mm`;
+    if (tag === 'Flash') return val === 0 ? 'Off' : val === 1 ? 'On' : `${val}`;
+    if (tag === 'WhiteBalance') return val === 0 ? 'Auto' : 'Manual';
+    if (tag === 'GPSLatitude' || tag === 'GPSLongitude') {
+      if (Array.isArray(val)) return val.map(v => typeof v === 'object' ? (v.numerator/v.denominator).toFixed(4) : v).join('° ') + '\'';
+      return String(val);
+    }
+    if (Array.isArray(val)) return val.join(', ');
+    return String(val);
+  }
+
+  function formatSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/(1024*1024)).toFixed(2) + ' MB';
+  }
+</script>
+</body>
+</html>

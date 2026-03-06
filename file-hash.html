@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>File Hash Checker</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.drop-zone {
+  border: 1px dashed rgba(255,255,255,0.3);
+  border-radius: 3px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%; height: 100%;
+  margin: 0; padding: 0; border: none; background: none;
+}
+.drop-icon { font-size: 1.8rem; opacity: 0.45; margin-bottom: 0.4rem; }
+.drop-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.drop-text span { display: block; margin-top: 0.25rem; font-size: 0.68rem; opacity: 0.6; }
+
+.file-info {
+  display: none;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  padding: 0.6rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 1.2rem;
+  animation: fadeUp 0.25s ease forwards;
+}
+
+.hash-row { margin-bottom: 1rem; }
+.hash-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.hash-value {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  padding: 0.6rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.88);
+  word-break: break-all;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.hash-value:hover { border-color: rgba(255,255,255,0.35); }
+.hash-value.copied { border-color: rgba(255,255,255,0.7); color: white; }
+.copy-hint {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+.verify-section { margin-top: 1rem; }
+.verify-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.verify-row input[type="text"] {
+  flex: 1;
+  margin-bottom: 0;
+  font-size: 0.8rem;
+}
+.verify-btn {
+  width: auto;
+  padding: 0.65rem 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.verify-result {
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  display: none;
+}
+.verify-result.match { color: #8ee07a; }
+.verify-result.nomatch { color: #e06c6c; }
+
+#results { display: none; animation: fadeUp 0.3s ease forwards; }
+
+.progress-wrap { display: none; margin: 0.8rem 0; }
+.progress-bar { height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: rgba(255,255,255,0.7); border-radius: 2px; transition: width 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>File Hash Checker</h1>
+    <div class="card">
+      <label>Drop any file</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" />
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop file here or click to browse<span>Any file type supported</span></div>
+      </div>
+
+      <div class="file-info" id="file-info"></div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <div id="results">
+        <hr class="divider" />
+        <div class="hash-row">
+          <div class="hash-label">SHA-1</div>
+          <div class="hash-value" id="h-sha1" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-256</div>
+          <div class="hash-value" id="h-sha256" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+        <div class="hash-row">
+          <div class="hash-label">SHA-512</div>
+          <div class="hash-value" id="h-sha512" onclick="copyHash(this)">—</div>
+          <div class="copy-hint">click to copy</div>
+        </div>
+
+        <div class="verify-section">
+          <label>Verify against known hash</label>
+          <div class="verify-row">
+            <input type="text" id="verify-input" placeholder="Paste expected hash…" />
+            <button class="verify-btn" onclick="verifyHash()">Check</button>
+          </div>
+          <div class="verify-result" id="verify-result"></div>
+        </div>
+      </div>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script>
+  let hashes = {};
+  const fileInput = document.getElementById('file-input');
+  const dropZone  = document.getElementById('drop-zone');
+
+  fileInput.addEventListener('change', e => processFile(e.target.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    processFile(e.dataTransfer.files[0]);
+  });
+
+  async function processFile(file) {
+    if (!file) return;
+    hashes = {};
+
+    document.getElementById('file-info').style.display = 'block';
+    document.getElementById('file-info').textContent = `${file.name}  ·  ${formatSize(file.size)}`;
+    document.getElementById('progress-wrap').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('verify-result').style.display = 'none';
+
+    const buf = await file.arrayBuffer();
+    setProgress(30);
+
+    const [s1, s256, s512] = await Promise.all([
+      digest('SHA-1', buf),
+      digest('SHA-256', buf),
+      digest('SHA-512', buf),
+    ]);
+    setProgress(100);
+
+    hashes = { sha1: s1, sha256: s256, sha512: s512 };
+    document.getElementById('h-sha1').textContent   = s1;
+    document.getElementById('h-sha256').textContent = s256;
+    document.getElementById('h-sha512').textContent = s512;
+    document.getElementById('results').style.display = 'block';
+
+    setTimeout(() => { document.getElementById('progress-wrap').style.display = 'none'; setProgress(0); }, 600);
+  }
+
+  async function digest(algo, buf) {
+    const hashBuf = await crypto.subtle.digest(algo, buf);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  function copyHash(el) {
+    navigator.clipboard.writeText(el.textContent);
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 1200);
+  }
+
+  function verifyHash() {
+    const input = document.getElementById('verify-input').value.trim().toLowerCase();
+    const res   = document.getElementById('verify-result');
+    if (!input || !hashes.sha256) return;
+    const match = Object.values(hashes).includes(input);
+    res.style.display = 'block';
+    res.className = 'verify-result ' + (match ? 'match' : 'nomatch');
+    res.textContent = match ? '✓ Hash matches' : '✗ Hash does not match';
+  }
+
+  document.getElementById('verify-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifyHash(); });
+
+  function formatSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/(1024*1024)).toFixed(2) + ' MB';
+  }
+</script>
+</body>
+</html>

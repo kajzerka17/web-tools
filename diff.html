@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diff Checker</title>
+<link rel="stylesheet" href="tools.css" />
+<style>
+.diff-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.diff-inputs label { margin-bottom: 0.3rem; }
+.diff-inputs textarea {
+  min-height: 160px;
+  margin-bottom: 0;
+  font-size: 0.78rem;
+}
+
+#diff-output { display: none; animation: fadeUp 0.3s ease forwards; }
+
+.diff-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+.stat-add { color: #8ee07a; }
+.stat-rem { color: #e06c6c; }
+.stat-eq  { color: var(--text-muted); }
+
+.diff-view {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.diff-line {
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+.diff-line-num {
+  min-width: 32px;
+  text-align: right;
+  padding: 0 6px;
+  color: rgba(255,255,255,0.2);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  user-select: none;
+  flex-shrink: 0;
+}
+.diff-line-text {
+  padding: 0 0.7rem;
+  word-break: break-all;
+  white-space: pre-wrap;
+  flex: 1;
+}
+.diff-line.added   { background: rgba(100,200,80,0.12); }
+.diff-line.removed { background: rgba(220,80,80,0.12); }
+.diff-line.added   .diff-line-text::before { content: '+'; color: #8ee07a; margin-right: 0.4rem; }
+.diff-line.removed .diff-line-text::before { content: '−'; color: #e06c6c; margin-right: 0.4rem; }
+.diff-line.equal   .diff-line-text::before { content: ' '; margin-right: 0.9rem; }
+
+.identical {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #8ee07a;
+  text-align: center;
+  padding: 1rem;
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="content">
+    <a href="index.html" class="back-link">← Tools</a>
+    <h1>Diff Checker</h1>
+    <div class="card">
+      <div class="diff-inputs">
+        <div>
+          <label>Original</label>
+          <textarea id="text-a" placeholder="Original text…"></textarea>
+        </div>
+        <div>
+          <label>Modified</label>
+          <textarea id="text-b" placeholder="Modified text…"></textarea>
+        </div>
+      </div>
+
+      <button onclick="runDiff()">Compare</button>
+
+      <div id="diff-output">
+        <hr class="divider" />
+        <div class="diff-stats">
+          <span class="stat-add" id="stat-add"></span>
+          <span class="stat-rem" id="stat-rem"></span>
+          <span class="stat-eq"  id="stat-eq"></span>
+        </div>
+        <div class="diff-view" id="diff-view"></div>
+      </div>
+
+      <hr class="divider" style="margin-top:1.4rem;" />
+      <div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--text-muted);margin-top:0.8rem;"><a href="https://github.com/kajzerka17" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.18);padding-bottom:1px;">https://github.com/kajzerka17</a></div>
+    </div>
+  </div>
+</div>
+<script>
+  // Myers diff algorithm — line-level
+  function diffLines(a, b) {
+    const aLines = a.split('\n');
+    const bLines = b.split('\n');
+    const n = aLines.length, m = bLines.length;
+    const max = n + m;
+    const v = new Array(2 * max + 1).fill(0);
+    const trace = [];
+
+    for (let d = 0; d <= max; d++) {
+      trace.push([...v]);
+      for (let k = -d; k <= d; k += 2) {
+        let x;
+        const idx = k + max;
+        if (k === -d || (k !== d && v[idx - 1] < v[idx + 1])) {
+          x = v[idx + 1];
+        } else {
+          x = v[idx - 1] + 1;
+        }
+        let y = x - k;
+        while (x < n && y < m && aLines[x] === bLines[y]) { x++; y++; }
+        v[idx] = x;
+        if (x >= n && y >= m) {
+          return backtrack(trace, aLines, bLines, n, m, max);
+        }
+      }
+    }
+    return [];
+  }
+
+  function backtrack(trace, a, b, n, m, max) {
+    const result = [];
+    let x = n, y = m;
+    for (let d = trace.length - 1; d >= 0; d--) {
+      const v = trace[d];
+      const k = x - y;
+      const idx = k + max;
+      let prevK;
+      if (k === -d || (k !== d && v[idx - 1] < v[idx + 1])) {
+        prevK = k + 1;
+      } else {
+        prevK = k - 1;
+      }
+      const prevX = v[prevK + max];
+      const prevY = prevX - prevK;
+      while (x > prevX && y > prevY) { result.push({ type: 'equal', a: a[x-1], b: b[y-1] }); x--; y--; }
+      if (d > 0) {
+        if (x === prevX) { result.push({ type: 'added', b: b[y-1] }); y--; }
+        else             { result.push({ type: 'removed', a: a[x-1] }); x--; }
+      }
+    }
+    return result.reverse();
+  }
+
+  function runDiff() {
+    const a = document.getElementById('text-a').value;
+    const b = document.getElementById('text-b').value;
+    const out = document.getElementById('diff-output');
+    const view = document.getElementById('diff-view');
+    out.style.display = 'block';
+    view.innerHTML = '';
+
+    if (a === b) {
+      view.innerHTML = '<div class="identical">✓ Files are identical</div>';
+      document.getElementById('stat-add').textContent = '';
+      document.getElementById('stat-rem').textContent = '';
+      document.getElementById('stat-eq').textContent = '';
+      return;
+    }
+
+    const edits = diffLines(a, b);
+    let added = 0, removed = 0, equal = 0, lineNum = 0;
+
+    edits.forEach(edit => {
+      const div = document.createElement('div');
+      div.className = 'diff-line ' + edit.type;
+      if (edit.type !== 'added') lineNum++;
+      const numSpan = document.createElement('span');
+      numSpan.className = 'diff-line-num';
+      numSpan.textContent = edit.type !== 'added' ? lineNum : '';
+      const textSpan = document.createElement('span');
+      textSpan.className = 'diff-line-text';
+      textSpan.textContent = edit.type === 'added' ? edit.b : edit.a;
+      div.appendChild(numSpan);
+      div.appendChild(textSpan);
+      view.appendChild(div);
+      if (edit.type === 'added')   added++;
+      if (edit.type === 'removed') removed++;
+      if (edit.type === 'equal')   equal++;
+    });
+
+    document.getElementById('stat-add').textContent = `+${added} added`;
+    document.getElementById('stat-rem').textContent = `−${removed} removed`;
+    document.getElementById('stat-eq').textContent  = `${equal} unchanged`;
+  }
+</script>
+</body>
+</html>
